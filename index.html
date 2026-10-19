@@ -129,6 +129,16 @@ body.adm main,body.adm header .wrap{max-width:1100px}
 #camModal.review .bar .rv{display:inline-block}
 #camModal.review video{display:none}
 #camModal.review img{display:block}
+
+/* ---- குரல் உள்ளீடு ---- */
+.inwrap{position:relative}
+.inwrap input{padding-right:58px}
+.mic{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:2px solid var(--red);
+  background:var(--card);font-size:1.25rem;line-height:1;cursor:pointer;padding:0}
+.mic.on{background:var(--red);border-color:var(--red-d);animation:micp 1s ease-in-out infinite}
+@keyframes micp{0%,100%{box-shadow:0 0 0 0 rgba(200,16,46,.5)}50%{box-shadow:0 0 0 9px rgba(200,16,46,0)}}
+@media (prefers-reduced-motion:reduce){.mic.on{animation:none}}
+.micnote{font-size:.8rem;color:var(--mute);min-height:1.2em;margin-top:4px}
 </style>
 </head>
 <body>
@@ -151,7 +161,11 @@ body.adm main,body.adm header .wrap{max-width:1100px}
   <section id="userView">
     <div class="card">
       <label class="f" for="name">பெயர்</label>
-      <input type="text" id="name" autocomplete="name" placeholder="முழு பெயர்">
+      <div class="inwrap">
+        <input type="text" id="name" autocomplete="name" placeholder="முழு பெயர் (தமிழில்)" lang="ta">
+        <button type="button" id="micBtn" class="mic" aria-label="குரலில் பெயர் சொல்லுங்கள்" title="குரலில் பெயர் சொல்லுங்கள்">🎤</button>
+      </div>
+      <div class="micnote" id="micNote" aria-live="polite"></div>
 
       <label class="f" for="mobile">செல் நம்பர்</label>
       <input type="tel" id="mobile" inputmode="numeric" maxlength="10" autocomplete="tel" placeholder="10 இலக்க எண்">
@@ -224,7 +238,7 @@ body.adm main,body.adm header .wrap{max-width:1100px}
     </div>
     <button class="btn alt" id="backBtn" type="button">← படிவத்திற்குத் திரும்பு</button>
   </section>
-  <p style="text-align:center;color:var(--mute);font-size:.75rem;margin:4px 0 20px">பதிப்பு 3 · 📷 கேமரா வசதியுடன்</p>
+  <p style="text-align:center;color:var(--mute);font-size:.75rem;margin:4px 0 20px">பதிப்பு 4 · 📷 கேமரா · 🎤 குரல் வசதியுடன்</p>
 </main>
 
 <div id="camModal" role="dialog" aria-modal="true" aria-label="கேமரா">
@@ -532,6 +546,24 @@ $("camUse").onclick=()=>{
   camClose();
 };
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&camBox.classList.contains("show")) camClose(); });
+/* ---------- குரல் → தமிழ் பெயர் ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null, micOn=false;
+function micNote(t,err){ const n=$("micNote"); n.textContent=t||""; n.style.color=err?"var(--red)":"var(--mute)"; }
+$("micBtn").addEventListener("click",()=>{
+  if(!SR){ micNote("இந்த browser இல் குரல் வசதி இல்லை. Chrome பயன்படுத்தவும், அல்லது keyboard இல் உள்ள 🎤 ஐ அழுத்தவும்.",true); return; }
+  if(micOn&&rec){ rec.stop(); return; }
+  rec=new SR(); rec.lang="ta-IN"; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
+  rec.onstart=()=>{ micOn=true; $("micBtn").classList.add("on"); micNote("கேட்கிறது… பெயரைச் சொல்லுங்கள்"); };
+  rec.onresult=e=>{ let t=""; for(let i=0;i<e.results.length;i++) t+=e.results[i][0].transcript; $("name").value=t.trim(); };
+  rec.onerror=e=>{
+    const m={"not-allowed":"மைக் அனுமதி இல்லை. Browser இல் Microphone → Allow கொடுக்கவும்.","service-not-allowed":"மைக் அனுமதி இல்லை. Browser இல் Microphone → Allow கொடுக்கவும்.",
+      "no-speech":"குரல் கேட்கவில்லை. மீண்டும் முயலவும்.","audio-capture":"மைக் கிடைக்கவில்லை.","network":"இணைய இணைப்பு தேவை."};
+    micNote(m[e.error]||"குரல் உள்ளீடு தோல்வி. மீண்டும் முயலவும்.",true);
+  };
+  rec.onend=()=>{ micOn=false; $("micBtn").classList.remove("on"); if($("micNote").textContent.startsWith("கேட்கிறது")) micNote("சரிபார்த்து தேவையானால் திருத்தவும்"); };
+  try{ rec.start(); }catch(e){ micNote("மைக்கைத் தொடங்க முடியவில்லை. மீண்டும் அழுத்தவும்.",true); }
+});
 </script>
 </body>
 </html>

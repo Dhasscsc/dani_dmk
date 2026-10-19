@@ -182,6 +182,8 @@ body.adm main,body.adm header .wrap{max-width:1100px}
         <div class="file"><input type="file" id="f_photo" accept="image/*"><button type="button" class="cam" data-camfor="f_photo" data-facing="user">📷 கேமராவில் படம் எடு</button><div class="pv"></div></div>
         <label class="f">ஆதார்</label>
         <div class="file"><input type="file" id="f_aadhaar1" accept="image/*,application/pdf"><button type="button" class="cam" data-camfor="f_aadhaar1" data-facing="environment">📷 கேமராவில் படம் எடு</button><div class="pv"></div></div>
+        <label class="f">கேஸ் பில் (அ) தீர்வை ஆவணம்</label>
+        <div class="file"><input type="file" id="f_bill1" accept="image/*,application/pdf"><button type="button" class="cam" data-camfor="f_bill1" data-facing="environment">📷 கேமராவில் படம் எடு</button><div class="pv"></div></div>
       </div>
 
       <div class="dyn" id="d2">
@@ -189,6 +191,8 @@ body.adm main,body.adm header .wrap{max-width:1100px}
         <div class="file"><input type="file" id="f_voter" accept="image/*,application/pdf"><button type="button" class="cam" data-camfor="f_voter" data-facing="environment">📷 கேமராவில் படம் எடு</button><div class="pv"></div></div>
         <label class="f">ஆதார்</label>
         <div class="file"><input type="file" id="f_aadhaar2" accept="image/*,application/pdf"><button type="button" class="cam" data-camfor="f_aadhaar2" data-facing="environment">📷 கேமராவில் படம் எடு</button><div class="pv"></div></div>
+        <label class="f">கேஸ் பில் (அ) தீர்வை ஆவணம்</label>
+        <div class="file"><input type="file" id="f_bill2" accept="image/*,application/pdf"><button type="button" class="cam" data-camfor="f_bill2" data-facing="environment">📷 கேமராவில் படம் எடு</button><div class="pv"></div></div>
       </div>
 
       <div class="dyn" id="d3">
@@ -238,7 +242,7 @@ body.adm main,body.adm header .wrap{max-width:1100px}
     </div>
     <button class="btn alt" id="backBtn" type="button">← படிவத்திற்குத் திரும்பு</button>
   </section>
-  <p style="text-align:center;color:var(--mute);font-size:.75rem;margin:4px 0 20px">பதிப்பு 4 · 📷 கேமரா · 🎤 குரல் வசதியுடன்</p>
+  <p style="text-align:center;color:var(--mute);font-size:.75rem;margin:4px 0 20px">பதிப்பு 5 · 📷 கேமரா · 🎤 குரல் · 🧾 கேஸ் பில்/தீர்வை</p>
 </main>
 
 <div id="camModal" role="dialog" aria-modal="true" aria-label="கேமரா">
@@ -326,12 +330,16 @@ $("submitBtn").addEventListener("click", async ()=>{
       const a=$("f_photo").files[0], b=$("f_aadhaar1").files[0];
       if(!a) throw new Error("புகைப்படத்தைச் சேர்க்கவும்");
       if(!b) throw new Error("ஆதாரைச் சேர்க்கவும்");
-      p.files.photo=await readFile(a); p.files.aadhaar=await readFile(b);
+      const c=$("f_bill1").files[0];
+      if(!c) throw new Error("கேஸ் பில் (அ) தீர்வை ஆவணத்தைச் சேர்க்கவும்");
+      p.files.photo=await readFile(a); p.files.aadhaar=await readFile(b); p.files.bill=await readFile(c);
     }else if(svc==="திருத்தம்"){
       const a=$("f_voter").files[0], b=$("f_aadhaar2").files[0];
       if(!a) throw new Error("வாக்காளர் அட்டையைச் சேர்க்கவும்");
       if(!b) throw new Error("ஆதாரைச் சேர்க்கவும்");
-      p.files.voterCard=await readFile(a); p.files.aadhaar=await readFile(b);
+      const c=$("f_bill2").files[0];
+      if(!c) throw new Error("கேஸ் பில் (அ) தீர்வை ஆவணத்தைச் சேர்க்கவும்");
+      p.files.voterCard=await readFile(a); p.files.aadhaar=await readFile(b); p.files.bill=await readFile(c);
     }else{
       const v=$("voterNo").value.trim().toUpperCase();
       if(v.length<6) throw new Error("சரியான வாக்காளர் எண்ணை உள்ளிடவும்");
@@ -390,7 +398,7 @@ $("refBtn").onclick=async()=>{ try{ await loadRows(); show($("amsg"),"ok","ப�
 
 function links(r){
   const L=[]; const lk=(u,t)=>u?`<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>`:"";
-  L.push(lk(r.photo,"📷 புகைப்படம்"),lk(r.aadhaar,"🪪 ஆதார்"),lk(r.voterCard,"🗳️ வா.அட்டை"));
+  L.push(lk(r.photo,"📷 புகைப்படம்"),lk(r.aadhaar,"🪪 ஆதார்"),lk(r.voterCard,"🗳️ வா.அட்டை"),lk(r.bill,"🧾 கேஸ் பில்/தீர்வை"));
   if(r.voterNo) L.push(`<span>வா.எண்: ${esc(r.voterNo)}</span>`);
   return L.filter(Boolean).join("");
 }
@@ -489,9 +497,9 @@ $("cards").addEventListener("click",async e=>{
 });
 
 $("csvBtn").onclick=()=>{
-  const H=["ID","தேதி","பெயர்","செல்","சேவை","வாக்காளர் எண்","புகைப்படம்","ஆதார்","வா.அட்டை","நிலை","முடிந்த ஆவணம்"];
+  const H=["ID","தேதி","பெயர்","செல்","சேவை","வாக்காளர் எண்","புகைப்படம்","ஆதார்","வா.அட்டை","நிலை","முடிந்த ஆவணம்","கேஸ் பில்/தீர்வை"];
   const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
-  const csv="\ufeff"+[H.map(q).join(",")].concat(adminRows.map(r=>[r.id,r.date,r.name,r.mobile,r.service,r.voterNo,r.photo,r.aadhaar,r.voterCard,r.status,r.doneDoc].map(q).join(","))).join("\n");
+  const csv="\ufeff"+[H.map(q).join(",")].concat(adminRows.map(r=>[r.id,r.date,r.name,r.mobile,r.service,r.voterNo,r.photo,r.aadhaar,r.voterCard,r.status,r.doneDoc,r.bill].map(q).join(","))).join("\n");
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   a.download="dani-dmk-"+new Date().toISOString().slice(0,10)+".csv"; a.click();
 };

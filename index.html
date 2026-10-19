@@ -139,6 +139,11 @@ body.adm main,body.adm header .wrap{max-width:1100px}
 @keyframes micp{0%,100%{box-shadow:0 0 0 0 rgba(200,16,46,.5)}50%{box-shadow:0 0 0 9px rgba(200,16,46,0)}}
 @media (prefers-reduced-motion:reduce){.mic.on{animation:none}}
 .micnote{font-size:.8rem;color:var(--mute);min-height:1.2em;margin-top:4px}
+
+.inwrap textarea{width:100%;padding:11px 58px 11px 12px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;resize:vertical;min-height:84px}
+.inwrap textarea:focus{outline:3px solid var(--red);outline-offset:1px}
+.taw .mic{top:8px;transform:none}
+.rc .reason{font-size:.88rem;background:var(--chip);border-radius:8px;padding:6px 10px}
 </style>
 </head>
 <body>
@@ -198,6 +203,12 @@ body.adm main,body.adm header .wrap{max-width:1100px}
       <div class="dyn" id="d3">
         <label class="f" for="voterNo">வாக்காளர் எண்</label>
         <input type="text" id="voterNo" maxlength="12" autocapitalize="characters" placeholder="எ.கா. ABC1234567">
+        <label class="f" for="reason">நீக்கத்திற்கான காரணம்</label>
+        <div class="inwrap taw">
+          <textarea id="reason" rows="3" maxlength="500" lang="ta" placeholder="காரணத்தைத் தமிழில் பதிவு செய்யவும் (எ.கா. இறப்பு, இடம் மாற்றம், இரட்டைப் பதிவு)"></textarea>
+          <button type="button" id="micBtn2" class="mic" aria-label="குரலில் காரணம் சொல்லுங்கள்" title="குரலில் காரணம் சொல்லுங்கள்">🎤</button>
+        </div>
+        <div class="micnote" id="micNote2" aria-live="polite"></div>
       </div>
 
       <button class="btn" id="submitBtn" type="button">பதிவு செய்</button>
@@ -242,7 +253,7 @@ body.adm main,body.adm header .wrap{max-width:1100px}
     </div>
     <button class="btn alt" id="backBtn" type="button">← படிவத்திற்குத் திரும்பு</button>
   </section>
-  <p style="text-align:center;color:var(--mute);font-size:.75rem;margin:4px 0 20px">பதிப்பு 5 · 📷 கேமரா · 🎤 குரல் · 🧾 கேஸ் பில்/தீர்வை</p>
+  <p style="text-align:center;color:var(--mute);font-size:.75rem;margin:4px 0 20px">பதிப்பு 6 · 📷 கேமரா · 🎤 குரல் · 🧾 கேஸ் பில் · நீக்க காரணம்</p>
 </main>
 
 <div id="camModal" role="dialog" aria-modal="true" aria-label="கேமரா">
@@ -343,7 +354,9 @@ $("submitBtn").addEventListener("click", async ()=>{
     }else{
       const v=$("voterNo").value.trim().toUpperCase();
       if(v.length<6) throw new Error("சரியான வாக்காளர் எண்ணை உள்ளிடவும்");
-      p.voterNo=v;
+      const rs=$("reason").value.trim();
+      if(rs.length<3) throw new Error("நீக்கத்திற்கான காரணத்தை உள்ளிடவும்");
+      p.voterNo=v; p.reason=rs;
     }
     const res=await api(p);
     const mine=lsGet(); mine.unshift({id:res.id,name,mobile,service:svc,date:new Date().toISOString()}); lsSet(mine.slice(0,30));
@@ -353,7 +366,7 @@ $("submitBtn").addEventListener("click", async ()=>{
   btn.disabled=false; btn.textContent="பதிவு செய்";
 });
 function resetForm(){
-  $("name").value=""; $("mobile").value=""; $("voterNo").value="";
+  $("name").value=""; $("mobile").value=""; $("voterNo").value=""; $("reason").value="";
   document.querySelectorAll('.file input').forEach(i=>{i.value=""; i.parentElement.querySelector('.pv').style.display="none";});
   document.querySelectorAll('input[name=svc]').forEach(r=>r.checked=false);
   ["d1","d2","d3"].forEach(d=>$(d).classList.remove("show"));
@@ -418,6 +431,7 @@ function card(r){
     <div class="nm">${esc(r.name)}</div>
     <div class="meta"><span class="svcchip">${esc(r.service)}</span><a href="tel:${esc(r.mobile)}">📞 ${esc(r.mobile)}</a></div>
     <div class="links">${links(r)}</div>
+    ${r.reason?`<div class="reason"><b>நீக்க காரணம்:</b> ${esc(r.reason)}</div>`:""}
     ${doc}
     <div class="up">
       <b>${r.doneDoc?"ஆவணத்தை மாற்று":"முடிந்த வேலை ஆவணம்"} (PDF / படம்)</b>
@@ -497,9 +511,9 @@ $("cards").addEventListener("click",async e=>{
 });
 
 $("csvBtn").onclick=()=>{
-  const H=["ID","தேதி","பெயர்","செல்","சேவை","வாக்காளர் எண்","புகைப்படம்","ஆதார்","வா.அட்டை","நிலை","முடிந்த ஆவணம்","கேஸ் பில்/தீர்வை"];
+  const H=["ID","தேதி","பெயர்","செல்","சேவை","வாக்காளர் எண்","புகைப்படம்","ஆதார்","வா.அட்டை","நிலை","முடிந்த ஆவணம்","கேஸ் பில்/தீர்வை","நீக்க காரணம்"];
   const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
-  const csv="\ufeff"+[H.map(q).join(",")].concat(adminRows.map(r=>[r.id,r.date,r.name,r.mobile,r.service,r.voterNo,r.photo,r.aadhaar,r.voterCard,r.status,r.doneDoc,r.bill].map(q).join(","))).join("\n");
+  const csv="\ufeff"+[H.map(q).join(",")].concat(adminRows.map(r=>[r.id,r.date,r.name,r.mobile,r.service,r.voterNo,r.photo,r.aadhaar,r.voterCard,r.status,r.doneDoc,r.bill,r.reason].map(q).join(","))).join("\n");
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
   a.download="dani-dmk-"+new Date().toISOString().slice(0,10)+".csv"; a.click();
 };
@@ -554,24 +568,32 @@ $("camUse").onclick=()=>{
   camClose();
 };
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&camBox.classList.contains("show")) camClose(); });
-/* ---------- குரல் → தமிழ் பெயர் ---------- */
+/* ---------- குரல் → தமிழ் உள்ளீடு ---------- */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let rec=null, micOn=false;
-function micNote(t,err){ const n=$("micNote"); n.textContent=t||""; n.style.color=err?"var(--red)":"var(--mute)"; }
-$("micBtn").addEventListener("click",()=>{
-  if(!SR){ micNote("இந்த browser இல் குரல் வசதி இல்லை. Chrome பயன்படுத்தவும், அல்லது keyboard இல் உள்ள 🎤 ஐ அழுத்தவும்.",true); return; }
-  if(micOn&&rec){ rec.stop(); return; }
-  rec=new SR(); rec.lang="ta-IN"; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
-  rec.onstart=()=>{ micOn=true; $("micBtn").classList.add("on"); micNote("கேட்கிறது… பெயரைச் சொல்லுங்கள்"); };
-  rec.onresult=e=>{ let t=""; for(let i=0;i<e.results.length;i++) t+=e.results[i][0].transcript; $("name").value=t.trim(); };
-  rec.onerror=e=>{
-    const m={"not-allowed":"மைக் அனுமதி இல்லை. Browser இல் Microphone → Allow கொடுக்கவும்.","service-not-allowed":"மைக் அனுமதி இல்லை. Browser இல் Microphone → Allow கொடுக்கவும்.",
-      "no-speech":"குரல் கேட்கவில்லை. மீண்டும் முயலவும்.","audio-capture":"மைக் கிடைக்கவில்லை.","network":"இணைய இணைப்பு தேவை."};
-    micNote(m[e.error]||"குரல் உள்ளீடு தோல்வி. மீண்டும் முயலவும்.",true);
-  };
-  rec.onend=()=>{ micOn=false; $("micBtn").classList.remove("on"); if($("micNote").textContent.startsWith("கேட்கிறது")) micNote("சரிபார்த்து தேவையானால் திருத்தவும்"); };
-  try{ rec.start(); }catch(e){ micNote("மைக்கைத் தொடங்க முடியவில்லை. மீண்டும் அழுத்தவும்.",true); }
-});
+let rec=null, micBtnOn=null;
+function bindMic(btnId,inputId,noteId,append){
+  const btn=$(btnId), inp=$(inputId), note=$(noteId);
+  const say=(t,err)=>{ note.textContent=t||""; note.style.color=err?"var(--red)":"var(--mute)"; };
+  btn.addEventListener("click",()=>{
+    if(!SR){ say("இந்த browser இல் குரல் வசதி இல்லை. Chrome பயன்படுத்தவும், அல்லது keyboard இல் உள்ள 🎤 ஐ அழுத்தவும்.",true); return; }
+    if(rec&&micBtnOn===btn){ rec.stop(); return; }
+    if(rec){ try{ rec.stop(); }catch(e){} }
+    const base=append?inp.value.trim():"";
+    const r=new SR(); rec=r; micBtnOn=btn;
+    r.lang="ta-IN"; r.interimResults=true; r.continuous=false; r.maxAlternatives=1;
+    r.onstart=()=>{ btn.classList.add("on"); say("கேட்கிறது… சொல்லுங்கள்"); };
+    r.onresult=e=>{ let t=""; for(let i=0;i<e.results.length;i++) t+=e.results[i][0].transcript; inp.value=(base?base+" ":"")+t.trim(); };
+    r.onerror=e=>{
+      const m={"not-allowed":"மைக் அனுமதி இல்லை. Browser இல் Microphone → Allow கொடுக்கவும்.","service-not-allowed":"மைக் அனுமதி இல்லை. Browser இல் Microphone → Allow கொடுக்கவும்.",
+        "no-speech":"குரல் கேட்கவில்லை. மீண்டும் முயலவும்.","audio-capture":"மைக் கிடைக்கவில்லை.","network":"இணைய இணைப்பு தேவை."};
+      say(m[e.error]||"குரல் உள்ளீடு தோல்வி. மீண்டும் முயலவும்.",true);
+    };
+    r.onend=()=>{ btn.classList.remove("on"); if(rec===r){ rec=null; micBtnOn=null; } if(note.textContent.startsWith("கேட்கிறது")) say("சரிபார்த்து தேவையானால் திருத்தவும்"); };
+    try{ r.start(); }catch(e){ say("மைக்கைத் தொடங்க முடியவில்லை. மீண்டும் அழுத்தவும்.",true); }
+  });
+}
+bindMic("micBtn","name","micNote",false);     // பெயர்: புதிதாக மாற்றும்
+bindMic("micBtn2","reason","micNote2",true);  // காரணம்: தொடர்ந்து சேர்க்கும்
 </script>
 </body>
 </html>
